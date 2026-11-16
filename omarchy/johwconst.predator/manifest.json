@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "johwconst.predator",
+  "name": "Predator",
+  "version": "1.0.0",
+  "author": "johwconst",
+  "description": "Lighting, performance modes and Claude Code LEDs for the Acer Predator PHN16S-71.",
+  "license": "MIT",
+  "kinds": ["service", "bar-widget"],
+  "keepLoaded": true,
+  "entryPoints": {
+    "service": "Service.qml",
+    "barWidget": "Panel.qml"
+  },
+  "barWidget": {
+    "displayName": "Predator",
+    "description": "Performance mode, lighting and Claude Code LEDs",
+    "category": "System",
+    "allowMultiple": false,
+    "defaultSection": "right"
+  }
+}

@@ -1,0 +1,5 @@
+# omarchy-predatorsense-lite: acesso sem root para quem está no grupo input.
+# Controlador de iluminação ENE K5130 (I2C HID 0CF2:5130).
+SUBSYSTEM=="hidraw", KERNELS=="0018:0CF2:5130.*", MODE="0660", GROUP="input"
+# Módulo facer: modo de desempenho e timeout do teclado (reaplicado se o módulo for recarregado).
+ACTION=="add", SUBSYSTEM=="platform", KERNEL=="acer-wmi", RUN+="/usr/bin/systemd-tmpfiles --create /etc/tmpfiles.d/predator-rgb.conf"

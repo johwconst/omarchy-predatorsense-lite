@@ -1,0 +1,6 @@
+# Editores
+.vscode/
+*.log
+
+# Python
+__pycache__/
