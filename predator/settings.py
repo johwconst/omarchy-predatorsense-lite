@@ -48,6 +48,8 @@ class Settings:
     ModeOnBattery: PerformanceMode = None
     # Limite de carga em 80%, reaplicado ao iniciar e ao acordar (o firmware pode ligá-lo sozinho).
     ChargeLimit: bool = False
+    # Temperaturas de CPU/GPU na barra do Omarchy no lugar do ícone.
+    BarTemps: bool = False
 
     def mode_for(self, on_ac: bool):
         return self.ModeOnAC if on_ac else self.ModeOnBattery
@@ -77,6 +79,7 @@ class Settings:
                 ModeOnAC=PerformanceMode[d["ModeOnAC"]] if d.get("ModeOnAC") else None,
                 ModeOnBattery=PerformanceMode[d["ModeOnBattery"]] if d.get("ModeOnBattery") else None,
                 ChargeLimit=bool(d.get("ChargeLimit", False)),
+                BarTemps=bool(d.get("BarTemps", False)),
             )
         except (KeyError, TypeError, ValueError):
             return Settings()
@@ -91,6 +94,7 @@ class Settings:
             "ModeOnAC": self.ModeOnAC.name if self.ModeOnAC is not None else None,
             "ModeOnBattery": self.ModeOnBattery.name if self.ModeOnBattery is not None else None,
             "ChargeLimit": self.ChargeLimit,
+            "BarTemps": self.BarTemps,
         }
         tmp = FILE + ".tmp"
         with open(tmp, "w") as f:
@@ -136,6 +140,11 @@ class Settings:
     def save_charge_limit(enabled: bool) -> None:
         with Settings.editing() as s:
             s.ChargeLimit = bool(enabled)
+
+    @staticmethod
+    def save_bar_temps(enabled: bool) -> None:
+        with Settings.editing() as s:
+            s.BarTemps = bool(enabled)
 
     @staticmethod
     def save_claude_sound(state: str, sound) -> None:

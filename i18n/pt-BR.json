@@ -19,6 +19,8 @@
   "keyboardTimeout": "Apagar teclado após 30 s sem uso",
   "chargeLimit": "Limitar carga em 80%",
   "chargeLimitHint": "Modo de saúde da bateria",
+  "barTemps": "Mostrar temperatura da CPU/GPU na barra",
+  "barTempsHint": "Substitui o ícone; cor de alerta a partir de 90 °C",
   "mode.eco": "Eco",
   "mode.silent": "Silencioso",
   "mode.balanced": "Equilibrado",

@@ -19,6 +19,8 @@
   "keyboardTimeout": "Turn keyboard off after 30 s idle",
   "chargeLimit": "Limit charge to 80%",
   "chargeLimitHint": "Battery health mode",
+  "barTemps": "Show CPU/GPU temperature in the bar",
+  "barTempsHint": "Replaces the icon; alert color at 90 °C or above",
   "mode.eco": "Eco",
   "mode.silent": "Silent",
   "mode.balanced": "Balanced",

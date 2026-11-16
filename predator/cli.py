@@ -177,6 +177,15 @@ def cmd_charge_limit(a):
     print(f"limite de carga em 80%: {_yes_no(hw.get_charge_limit())}")
 
 
+def cmd_bar_temps(a):
+    """Liga/desliga as temperaturas na barra; sem argumento, imprime o JSON lido pelo plugin uma vez ao carregar."""
+    import json
+    if a.value is not None:
+        Settings.save_bar_temps(ON_OFF[a.value])
+        return
+    print(json.dumps({"enabled": Settings.load().BarTemps, "cpu": hw.cpu_temp_path(), "gpu": hw.gpu_temp_path()}))
+
+
 def _arg_name(table: dict, value):
     """Nome da CLI (ex.: "keyboard") para um enum, ou None."""
     return next((k for k, v in table.items() if v == value), None)
@@ -308,6 +317,10 @@ def main(argv=None):
     s = sub.add_parser("charge-limit", help="limitar a carga da bateria em 80%%")
     s.add_argument("value", nargs="?", choices=ON_OFF)
     s.set_defaults(func=cmd_charge_limit)
+
+    s = sub.add_parser("bar-temps", help="temperaturas de CPU/GPU na barra do Omarchy no lugar do ícone")
+    s.add_argument("value", nargs="?", choices=ON_OFF)
+    s.set_defaults(func=cmd_bar_temps)
 
     s = sub.add_parser("claude", help="estado do Claude Code nos LEDs (usado pelos hooks)")
     s.add_argument("state", choices=CLAUDE_STATES)

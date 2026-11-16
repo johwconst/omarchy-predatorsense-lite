@@ -42,8 +42,18 @@ Panel {
 
   readonly property var status: info ? info.status : ({})
 
-  implicitWidth: button.implicitWidth
-  implicitHeight: button.implicitHeight
+  // Temperaturas na barra no lugar do ícone (opcional). Caminhos vêm da CLI uma vez; a leitura
+  // é direta no sysfs (sem processo, sem nvidia-smi) e só roda com a opção ligada.
+  property bool barTemps: false
+  property string cpuTempPath: ""
+  property string gpuTempPath: ""
+  property var cpuTemp: null
+  property var gpuTemp: null
+  readonly property bool showTemps: barTemps && !button.vertical && Model.barTempsText(cpuTemp, gpuTemp) !== ""
+  readonly property Item barButton: showTemps ? tempsButton : button
+
+  implicitWidth: barButton.implicitWidth
+  implicitHeight: barButton.implicitHeight
 
   function modeOptions(withNone) {
     var list = withNone ? [{ value: "none", label: t("autoNone") }] : []
@@ -79,6 +89,57 @@ Panel {
   }
 
   onOpenedChanged: if (opened) refresh()
+
+  // ------------------------------------------------------------------ temperaturas na barra
+
+  Component.onCompleted: sensorsProc.running = true
+
+  Process {
+    id: sensorsProc
+    command: [root.predator, "bar-temps"]
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: {
+        var d = Model.parseBarTemps(text)
+        if (d === null) return
+        root.cpuTempPath = d.cpu || ""
+        root.gpuTempPath = d.gpu || ""
+        root.barTemps = d.enabled === true
+        if (root.barTemps) root.readTemps()
+      }
+    }
+  }
+
+  function readTemps() {
+    if (cpuTempPath !== "") cpuFile.reload()
+    if (gpuTempPath !== "") gpuFile.reload()
+  }
+
+  function setBarTemps(enabled) {
+    barTemps = enabled
+    if (enabled) readTemps()
+    action(["bar-temps", enabled ? "on" : "off"])
+  }
+
+  FileView {
+    id: cpuFile
+    path: root.cpuTempPath
+    watchChanges: false
+    printErrors: false
+    onLoaded: root.cpuTemp = Model.parseMilli(text())
+    onLoadFailed: root.cpuTemp = null
+  }
+
+  FileView {
+    id: gpuFile
+    path: root.gpuTempPath
+    watchChanges: false
+    printErrors: false
+    onLoaded: root.gpuTemp = Model.parseMilli(text())
+    onLoadFailed: root.gpuTemp = null
+  }
+
+  Timer { interval: 3000; running: root.barTemps && !button.vertical; repeat: true; onTriggered: root.readTemps() }
 
   Timer { interval: 3000; running: root.opened; repeat: true; onTriggered: root.refresh() }
   Timer { id: messageTimer; interval: 3500; onTriggered: root.message = "" }
@@ -125,6 +186,7 @@ Panel {
       var job = actionProc.job
       Qt.callLater(function() {
         if (exitCode !== 0) root.flash(Model.errorText(actionErr.text), true)
+        if (exitCode !== 0 && job && job.args[0] === "bar-temps") sensorsProc.running = true
         else if (job && job.ok) root.flash(job.ok, false)
         root.pump()
         if (!actionProc.running) root.refresh()
@@ -211,6 +273,7 @@ Panel {
   BarIconButton {
     id: button
     anchors.fill: parent
+    visible: !root.showTemps
     bar: root.bar
     tooltipText: ""
     // Ícone monocromático pintado com a cor da barra (segue o tema do Omarchy).
@@ -242,9 +305,21 @@ Panel {
     onPressed: function(b) { root.toggle() }
   }
 
+  WidgetButton {
+    id: tempsButton
+    anchors.fill: parent
+    bar: root.bar
+    visible: root.showTemps
+    text: Model.barTempsText(root.cpuTemp, root.gpuTemp)
+    fontSize: Style.font.bodySmall
+    // Cor de alerta da barra (tema) a partir de TEMP_ALERT.
+    active: Model.tempsHot(root.cpuTemp, root.gpuTemp)
+    onPressed: function(b) { root.toggle() }
+  }
+
   KeyboardPanel {
     id: panel
-    anchorItem: button
+    anchorItem: root.barButton
     owner: root
     bar: root.bar
     open: root.opened
@@ -358,6 +433,16 @@ Panel {
             foreground: root.fg
             fontFamily: root.fontFamily
             onClicked: root.action(["charge-limit", checked ? "off" : "on"])
+          }
+          Toggle {
+            width: parent.width
+            visible: root.cpuTempPath !== "" || root.gpuTempPath !== ""
+            label: root.t("barTemps")
+            description: root.t("barTempsHint")
+            checked: root.barTemps
+            foreground: root.fg
+            fontFamily: root.fontFamily
+            onClicked: root.setBarTemps(!root.barTemps)
           }
         }
 

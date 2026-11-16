@@ -362,15 +362,28 @@ class Status:
         return json.dumps(asdict(self), ensure_ascii=False, indent=2)
 
 
-def cpu_temp():
+def cpu_temp_path():
+    """Arquivo do sensor "Package id 0" do coretemp (o índice hwmonN muda entre boots)."""
     h = _hwmon("coretemp")
     if not h:
         return None
     for label in glob.glob(f"{h}/temp*_label"):
         if _read(label) == "Package id 0":
-            v = _read_int(label.replace("_label", "_input"))
-            return None if v is None else v // 1000
+            return label.replace("_label", "_input")
     return None
+
+
+def gpu_temp_path():
+    """Sensor da GPU no EC (hwmon acer, temp2): ler não acorda a GPU, ao contrário do nvidia-smi."""
+    h = _hwmon("acer")
+    path = f"{h}/temp2_input" if h else None
+    return path if path and os.path.exists(path) else None
+
+
+def cpu_temp():
+    path = cpu_temp_path()
+    v = _read_int(path) if path else None
+    return None if v is None else v // 1000
 
 
 def _nvidia_suspended() -> bool:

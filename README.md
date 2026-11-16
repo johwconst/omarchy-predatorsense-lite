@@ -87,10 +87,11 @@ omarchy plugin remove io.github.johwconst.predatorsense    # only if installed w
 The plugin (repository root: `manifest.json`, `Service.qml`, `Panel.qml`, `Model.js`, `i18n/`) is a `service` + `bar-widget`:
 
 - **Bar icon** (right section) opening a panel with three tabs:
-  - **General**: monitor, performance mode, mode when plugged in / on battery, charge limit, keyboard timeout;
+  - **General**: monitor, performance mode, mode when plugged in / on battery, charge limit, keyboard timeout, CPU/GPU temperature in the bar;
   - **Lighting**: target, effect, color, brightness, speed, direction and zones, with live preview and **Save as default**;
   - **Claude Code**: which LEDs show Claude's state, and effect, color, speed and sound per state.
 - The panel reads the hardware (`predator state --json`) **only while it is open**, every 3 s. When closed it reads nothing and never wakes the GPU.
+- Optional: **CPU/GPU temperature in the bar** in place of the icon (`C 62° G 51°`, alert color at 90 °C). It reads two sysfs files every 3 s without spawning processes; the GPU value comes from the EC sensor, so it never wakes the GPU.
 - **Background service**: reapplies the saved defaults when the shell starts and on resume (logind `PrepareForSleep`, via `gdbus monitor`), and applies the per-source mode when the charger is plugged or unplugged (UPower). Errors become notifications.
 - Strings follow Omarchy's language (`i18n/en.json`, `i18n/pt-BR.json`).
 
@@ -120,6 +121,7 @@ predator auto-mode --ac turbo --battery balanced            # none = don't chang
 predator auto-mode --apply       # apply the mode for the current power source
 predator timeout on|off          # keyboard off after 30 s idle
 predator charge-limit on|off     # 80% charge limit
+predator bar-temps [on|off]      # temperatures in the Omarchy bar instead of the icon
 
 predator claude-target logo on   # LED that shows Claude's state
 predator claude-light logo waiting --effect breath --color FF6E00 --speed 5

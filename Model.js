@@ -102,3 +102,34 @@ function errorText(raw) {
 function reading(value, unit) {
   return value === null || value === undefined ? "–" : String(value) + unit
 }
+
+// ------------------------------------------------------------------ temperaturas na barra
+
+var TEMP_ALERT = 90
+
+function parseBarTemps(raw) {
+  try {
+    var d = JSON.parse(raw)
+    return (d && typeof d === "object" && "enabled" in d) ? d : null
+  } catch (e) {
+    return null
+  }
+}
+
+// Conteúdo de um temp*_input do hwmon ("65000\n") em °C; inválido -> null.
+function parseMilli(text) {
+  var v = parseInt(String(text || "").trim(), 10)
+  return isNaN(v) ? null : Math.round(v / 1000)
+}
+
+// "C 62° G 51°"; omite o lado sem leitura; nenhum -> "".
+function barTempsText(cpu, gpu) {
+  var parts = []
+  if (cpu !== null && cpu !== undefined) parts.push("C " + cpu + "°")
+  if (gpu !== null && gpu !== undefined) parts.push("G " + gpu + "°")
+  return parts.join(" ")
+}
+
+function tempsHot(cpu, gpu) {
+  return (cpu !== null && cpu >= TEMP_ALERT) || (gpu !== null && gpu >= TEMP_ALERT)
+}
