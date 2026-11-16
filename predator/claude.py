@@ -3,16 +3,21 @@
 No Linux o HID não exige root, então o próprio hook (`predator claude <estado>`) grava os LEDs.
 O último estado e os LEDs acesos ficam em $XDG_RUNTIME_DIR/predator-rgb/claude.json, porque cada hook é um processo novo.
 """
+import fcntl
 import json
 import os
 import shutil
 import subprocess
+from contextlib import contextmanager
 
 from . import hw
 from .hw import LightEffect, LightSetting, LightTarget, LightDirection
 from .settings import CLAUDE_STATES, RUNTIME, Settings
 
 STATE_FILE = os.path.join(RUNTIME, "claude.json")
+# Trava própria (não a do HID): hooks de sessões diferentes rodam juntos, e ler-decidir-gravar
+# o claude.json tem que ser atômico. Um segundo flock no arquivo do HID travaria o próprio processo.
+STATE_LOCK = os.path.join(RUNTIME, "claude.lock")
 STATES = [s for s, _, _ in CLAUDE_STATES]
 DEFAULT_SOUND = {"waiting": "/usr/share/sounds/freedesktop/stereo/dialog-warning.oga",
                  "limit": "/usr/share/sounds/freedesktop/stereo/dialog-error.oga"}
@@ -27,13 +32,22 @@ def _load_state() -> dict:
         return {}
 
 
-def _save_state(state: str, lit: list, retry: bool = False) -> None:
+@contextmanager
+def _state_locked():
     os.makedirs(RUNTIME, exist_ok=True)
+    with open(STATE_LOCK, "w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        yield
+
+
+def _save_state(state: str, lit: list, retry: bool = False) -> None:
     d = {"state": state, "lit": [LightTarget(t).name for t in lit]}
     if retry:
         d["retry"] = True  # algum LED falhou: o próximo evento grava de novo, mesmo repetido
-    with open(STATE_FILE, "w") as f:
+    tmp = STATE_FILE + ".tmp"
+    with open(tmp, "w") as f:
         json.dump(d, f)
+    os.replace(tmp, STATE_FILE)  # quem lê ao mesmo tempo nunca vê o arquivo vazio
 
 
 def play_sound(state: str, settings: Settings = None) -> None:
@@ -61,6 +75,11 @@ def restore(target: LightTarget, settings: Settings = None) -> None:
 
 def set_state(state: str) -> None:
     """Chamado pelos hooks. `off` (ou qualquer estado desconhecido) restaura os LEDs."""
+    with _state_locked():
+        _set_state(state)
+
+
+def _set_state(state: str) -> None:
     previous = _load_state()
     settings = Settings.load()
     lit = [t.name for t in settings.ClaudeTargets] if state in STATES else []
@@ -74,9 +93,10 @@ def set_state(state: str) -> None:
 
 def refresh() -> None:
     """Reaplica o estado atual depois de algo sobrescrever os LEDs (padrão salvo, troca de modo, nova cor)."""
-    previous = _load_state()
-    if previous:
-        apply(previous.get("state", "off"), [LightTarget[t] for t in previous.get("lit", [])])
+    with _state_locked():
+        previous = _load_state()
+        if previous:
+            apply(previous.get("state", "off"), [LightTarget[t] for t in previous.get("lit", [])])
 
 
 def apply(state: str, lit: list, settings: Settings = None) -> None:
@@ -84,6 +104,7 @@ def apply(state: str, lit: list, settings: Settings = None) -> None:
     targets = settings.ClaudeTargets
     active = state in STATES
     errors = []
+    unrestored = []  # continuam em "lit" para o próximo evento tentar restaurar de novo
 
     for target in lit:
         if not active or target not in targets:
@@ -91,6 +112,7 @@ def apply(state: str, lit: list, settings: Settings = None) -> None:
                 restore(target, settings)
             except Exception as e:  # LED indisponível agora: o próximo evento tenta de novo
                 errors.append(e)
+                unrestored.append(target)
 
     for target in targets if active else []:
         light = settings.light_for(target, state)
@@ -103,6 +125,6 @@ def apply(state: str, lit: list, settings: Settings = None) -> None:
         except Exception as e:
             errors.append(e)
 
-    _save_state(state, list(targets) if active else [], retry=bool(errors))
+    _save_state(state, (list(targets) if active else []) + unrestored, retry=bool(errors))
     if errors:
         raise errors[0]

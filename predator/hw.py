@@ -100,6 +100,9 @@ class HardwareError(Exception):
     pass
 
 
+# Estado de execução e travas: nunca em /tmp (caminho fixo e compartilhado entre usuários).
+RUNTIME_DIR = os.environ.get("XDG_RUNTIME_DIR") or f"/run/user/{os.getuid()}"
+
 NO_PERMISSION = "sem permissão para gravar {}. Rode o install.sh para instalar a regra udev."
 
 # ------------------------------------------------------------------ HID (ENE K5130)
@@ -130,8 +133,7 @@ def find_controller() -> str:
 @contextmanager
 def _locked():
     # Hook do Claude, bandeja e painel podem gravar ao mesmo tempo.
-    run = os.environ.get("XDG_RUNTIME_DIR") or "/tmp"
-    with open(os.path.join(run, "predator-rgb.lock"), "w") as lock:
+    with open(os.path.join(RUNTIME_DIR, "predator-rgb.lock"), "w") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
         yield
 
@@ -143,23 +145,33 @@ def _controller():
         fd = os.open(path, os.O_RDWR)
     except PermissionError:
         raise HardwareError(NO_PERMISSION.format(path))
+    except OSError as e:
+        raise HardwareError(f"falha ao abrir {path}: {e.strerror or e}") from None
     try:
         yield fd
     finally:
         os.close(fd)
 
 
+def _ioctl(fd: int, request: int, buf: bytearray) -> None:
+    # Ex.: logo após acordar o controlador I2C pode responder EIO/ETIMEDOUT; vira mensagem de uma linha.
+    try:
+        fcntl.ioctl(fd, request, buf)
+    except OSError as e:
+        raise HardwareError(f"falha no controlador de iluminação: {e.strerror or e}") from None
+
+
 def _get(fd: int, report: int) -> bytes:
     buf = bytearray(REPORT_LEN)
     buf[0] = report
-    fcntl.ioctl(fd, HIDIOCGFEATURE, buf)
+    _ioctl(fd, HIDIOCGFEATURE, buf)
     return bytes(buf)
 
 
 def _set(fd: int, packet) -> None:
     buf = bytearray(packet)
     assert len(buf) == REPORT_LEN
-    fcntl.ioctl(fd, HIDIOCSFEATURE, buf)
+    _ioctl(fd, HIDIOCSFEATURE, buf)
 
 
 def _caps(fd: int, target: int) -> bytes:

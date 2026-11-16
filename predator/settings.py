@@ -5,11 +5,11 @@ import os
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 
-from .hw import LightEffect, LightSetting, LightTarget, PerformanceMode
+from .hw import RUNTIME_DIR, LightEffect, LightSetting, LightTarget, PerformanceMode
 
 FOLDER = os.path.join(os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.config"), "predator-rgb")
 FILE = os.path.join(FOLDER, "settings.json")
-RUNTIME = os.path.join(os.environ.get("XDG_RUNTIME_DIR") or "/tmp", "predator-rgb")
+RUNTIME = os.path.join(RUNTIME_DIR, "predator-rgb")
 
 
 @dataclass
@@ -64,13 +64,12 @@ class Settings:
         return next((l for l in self.Lighting if l.Target == target), None)
 
     @staticmethod
-    def load() -> "Settings":
+    def load(strict: bool = False) -> "Settings":
+        """Arquivo ausente = padrões. Arquivo inválido: padrões só para leitura; com strict, erro
+        (quem vai gravar não pode sobrescrever as configurações do usuário com os padrões)."""
         try:
             with open(FILE) as f:
                 d = json.load(f)
-        except (OSError, ValueError):
-            return Settings()
-        try:
             return Settings(
                 Lighting=[LightSetting.from_json(x) for x in d.get("Lighting", [])],
                 ClaudeTargets=[LightTarget[x] for x in d.get("ClaudeTargets", [])],
@@ -81,7 +80,11 @@ class Settings:
                 ChargeLimit=bool(d.get("ChargeLimit", False)),
                 BarTemps=bool(d.get("BarTemps", False)),
             )
-        except (KeyError, TypeError, ValueError):
+        except FileNotFoundError:
+            return Settings()
+        except (OSError, KeyError, TypeError, ValueError, AttributeError) as e:
+            if strict:
+                raise ValueError(f"{FILE} inválido ({e!r}); corrija ou apague o arquivo.") from None
             return Settings()
 
     def save(self) -> None:
@@ -108,7 +111,7 @@ class Settings:
         os.makedirs(FOLDER, exist_ok=True)
         with open(FILE + ".lock", "w") as lock:
             fcntl.flock(lock, fcntl.LOCK_EX)
-            s = Settings.load()
+            s = Settings.load(strict=True)
             yield s
             s.save()
 

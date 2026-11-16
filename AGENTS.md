@@ -18,6 +18,7 @@ bin/predator                 entry point (adds the repo to sys.path, calls preda
 predator/hw.py               hardware: ENE K5130 HID (ioctl), sysfs (mode, timeout, charge limit), status readers
 predator/settings.py         ~/.config/predator-rgb/settings.json (dataclass, locked read-modify-write)
 predator/claude.py           Claude Code LED states (hook entry point: `predator claude <state>`)
+tests/                       unittest, no hardware (Claude hook sequence, settings file)
 predator/cli.py              argparse CLI; also the JSON contract consumed by the plugin (`state --json`)
 predator/tray.py, panel.py   GTK fallback UI (non-Omarchy)
 manifest.json, Service.qml,  Omarchy plugin (id io.github.johwconst.predatorsense), at the repository root as the
@@ -74,10 +75,11 @@ The plugin only uses CLI names (`keyboard`, `static`, `ltr`, `eco`…), never Py
 
 ## Testing
 
-There is no automated test suite yet. Before committing:
+`tests/` holds stdlib `unittest` tests that never touch the hardware (temp `XDG_*` dirs, mocked `hw.set_lighting`): the Claude hook state machine and the settings file. Before committing:
 
 ```bash
 python3 -m py_compile predator/*.py
+python3 -m unittest discover -s tests
 bash -n install.sh
 omarchy plugin validate .
 bin/predator state --json | jq .        # read-only, safe

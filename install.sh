@@ -31,7 +31,7 @@ ask() { read -r -p "$1 [S/n] " r; [[ -z "$r" || "$r" =~ ^[sSyY] ]]; }
 # Remove os hooks deste projeto (comando contém "predator claude") e os eventos que ficarem vazios.
 JQ_REMOVE='
   if .hooks then
-    .hooks |= (with_entries(.value |= (map(.hooks |= map(select(.command | contains("predator claude") | not)))
+    .hooks |= (with_entries(.value |= (map(.hooks |= map(select(.command // "" | contains("predator claude") | not)))
                                        | map(select(.hooks | length > 0))))
                | with_entries(select(.value | length > 0)))
   else . end'
