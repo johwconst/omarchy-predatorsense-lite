@@ -18,7 +18,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PREDATOR = os.path.join(ROOT, "bin", "predator")
 AUTOSTART = os.path.join(os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.config"),
                          "autostart", "predator-tray.desktop")
-ICON = os.path.join(ROOT, "icons", "predator-tray.svg")
+ICON = os.path.join(ROOT, "icons", "predatorsense-icon.svg")
 
 
 def notify(text: str) -> None:

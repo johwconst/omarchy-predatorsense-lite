@@ -8,6 +8,8 @@ A lightweight PredatorSense alternative for the **Acer Predator Helios Neo 16S A
 - Temperatures, fan RPM, GPU power and battery at a glance
 - LEDs (and optional sounds) that show what **Claude Code** is doing
 
+![PredatorSense Lite panel in the Omarchy bar](preview.png)
+
 On Omarchy everything runs inside `omarchy-shell`, the Quickshell process that already draws the bar: there is no resident Python process. A small Python CLI (`predator`) does the hardware work and exits. Outside Omarchy, a GTK tray icon and a GTK4 panel are available instead.
 
 > Only tested on the PHN16S-71 (BIOS V1.28, kernel 7.2, Omarchy 4.5). Other Predator/Nitro models with the ENE K5130 controller may work, but are untested.
@@ -34,13 +36,31 @@ On this model the keyboard color is **not** controlled by Acer's WMI: the WMI co
 
 The full protocol, with the readings and tests behind it, is in [`PROTOCOLO.md`](PROTOCOLO.md) (Portuguese).
 
+## Requirements
+
+- Acer Predator PHN16S-71 (ENE K5130 lighting controller)
+- Your user in the `input` group: `sudo usermod -aG input $USER`, then log in again
+- Already shipped with Omarchy: `python`, `jq`, `glib2` (`gdbus`), `python-gobject`
+- Optional: [`acer-wmi-battery-dkms`](https://aur.archlinux.org/packages/acer-wmi-battery-dkms) (AUR) for the 80% charge limit; `install.sh` offers to install it
+- Optional, GTK fallback outside Omarchy only: `gtk4`, `libadwaita`, `libayatana-appindicator`
+
 ## Install
+
+The plugin needs the `predator` command and the hardware permissions, so `install.sh` runs once after the plugin is added. It uses `sudo` for the files under `/etc` and asks before every optional step.
+
+**From the Omarchy plugin manager:**
+
+```bash
+omarchy plugin add https://github.com/johwconst/omarchy-predatorsense-lite --enable
+~/.config/omarchy/plugins/io.github.johwconst.predatorsense/install.sh
+```
+
+**From a clone** (for development; the plugin folder is linked to the clone):
 
 ```bash
 git clone https://github.com/johwconst/omarchy-predatorsense-lite.git
 cd omarchy-predatorsense-lite
-./install.sh              # asks before optional steps
-./install.sh --uninstall
+./install.sh
 ```
 
 `install.sh`:
@@ -48,16 +68,23 @@ cd omarchy-predatorsense-lite
 1. links `~/.local/bin/predator` to `bin/predator`;
 2. installs a udev rule and a tmpfiles.d config that give the `input` group write access to the ENE hidraw node and the sysfs files above (uses `sudo`);
 3. without `facer`, enables `predator_v4=1` for the kernel `acer_wmi` (modprobe.d) so `platform_profile` exposes all five modes; offers to install `acer-wmi-battery-dkms` for the charge limit;
-4. on Omarchy, links the plugin into `~/.config/omarchy/plugins/johwconst.predator` and enables it; elsewhere, offers to autostart the tray;
+4. on Omarchy, links the clone into `~/.config/omarchy/plugins/io.github.johwconst.predatorsense` (skipped when installed with `omarchy plugin add`) and enables it; elsewhere, offers to autostart the tray;
 5. offers to add the Claude Code hooks to `~/.claude/settings.json`, keeping your existing hooks (backup in `settings.json.bak.predator`).
-
-Your user must be in the `input` group (`sudo usermod -aG input $USER`, then log in again). Dependencies ship with Omarchy: `python`, `python-gobject`, `jq`, `glib2` (`gdbus`); the GTK fallback also needs `gtk4`, `libadwaita` and `libayatana-appindicator`.
 
 If the bar icon does not show up right after installing, run `omarchy restart shell`.
 
+## Uninstall
+
+```bash
+./install.sh --uninstall                                   # from the clone or the plugin folder
+omarchy plugin remove io.github.johwconst.predatorsense    # only if installed with omarchy plugin add
+```
+
+`--uninstall` disables the plugin and removes the `predator` command, the tray autostart, the Claude Code hooks (other hooks are kept) and the files under `/etc`. Your settings stay in `~/.config/predator-rgb/`; delete that folder to remove them too. The sysfs permissions return to the defaults on the next boot.
+
 ## Omarchy plugin
 
-The plugin (`omarchy/johwconst.predator/`) is a `service` + `bar-widget`:
+The plugin (repository root: `manifest.json`, `Service.qml`, `Panel.qml`, `Model.js`, `i18n/`) is a `service` + `bar-widget`:
 
 - **Bar icon** (right section) opening a panel with three tabs:
   - **General**: monitor, performance mode, mode when plugged in / on battery, charge limit, keyboard timeout;
@@ -68,8 +95,8 @@ The plugin (`omarchy/johwconst.predator/`) is a `service` + `bar-widget`:
 - Strings follow Omarchy's language (`i18n/en.json`, `i18n/pt-BR.json`).
 
 ```bash
-omarchy bar move johwconst.predator --section right
-omarchy plugin disable johwconst.predator
+omarchy bar move io.github.johwconst.predatorsense --section right
+omarchy plugin disable io.github.johwconst.predatorsense
 ```
 
 ## CLI

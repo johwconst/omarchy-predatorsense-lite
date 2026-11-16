@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="93 32 114 160" role="img" aria-label="Símbolo PredatorSense">
+  <!-- Versão da barra (12 px): só as asas de icons/predatorsense-icon.svg, engrossadas 3 unidades (offset com cantos vivos),
+       sem o escudo. Monocromático: o plugin pinta pela transparência com a cor do tema. -->
+  <g fill="#fff" fill-rule="evenodd">
+    <path d="M123.0 189.5 L124.7 189.9 L148.0 145.6 L148.0 51.2 L145.2 50.8 L133.4 97.0 L112.6 75.4 L98.0 33.9 L95.0 34.4 L95.0 133.3 L123.0 160.1 Z M113.0 121.8 L113.0 96.8 L131.0 120.0 L131.0 135.3 L123.0 126.7 L123.0 132.7 Z"/>
+    <path d="M177.0 189.5 L175.3 189.9 L152.0 145.6 L152.0 51.2 L154.8 50.8 L166.6 97.0 L187.4 75.4 L202.0 33.9 L205.0 34.4 L205.0 133.3 L177.0 160.1 Z M187.0 121.8 L187.0 96.8 L169.0 120.0 L169.0 135.3 L177.0 126.7 L177.0 132.7 Z"/>
+  </g>
+</svg>

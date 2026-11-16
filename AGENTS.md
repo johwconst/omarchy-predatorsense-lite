@@ -7,7 +7,7 @@ Guidance for AI coding agents (and humans) working on this repository.
 A PredatorSense replacement for the **Acer Predator PHN16S-71** on Linux, shipped as a native **Omarchy shell plugin**. Two layers:
 
 1. **Python CLI** (`predator/`, entry point `bin/predator`): the only code that touches hardware. Every invocation is a short process that exits.
-2. **Omarchy plugin** (`omarchy/johwconst.predator/`): QML running inside `omarchy-shell` (Quickshell). It never touches hardware directly; it spawns `~/.local/bin/predator <command>` and parses the output.
+2. **Omarchy plugin** (repository root: `manifest.json`, `Service.qml`, `Panel.qml`, `Model.js`, `i18n/`, `icon.svg`): QML running inside `omarchy-shell` (Quickshell). It never touches hardware directly; it spawns `~/.local/bin/predator <command>` and parses the output.
 
 The GTK3 tray (`predator/tray.py`) and GTK4 panel (`predator/panel.py`) are the fallback UI for non-Omarchy desktops. Keep them working, but new UI work goes into the plugin first.
 
@@ -20,7 +20,9 @@ predator/settings.py         ~/.config/predator-rgb/settings.json (dataclass, lo
 predator/claude.py           Claude Code LED states (hook entry point: `predator claude <state>`)
 predator/cli.py              argparse CLI; also the JSON contract consumed by the plugin (`state --json`)
 predator/tray.py, panel.py   GTK fallback UI (non-Omarchy)
-omarchy/johwconst.predator/  Omarchy plugin: manifest.json, Service.qml, Panel.qml, Model.js, i18n/
+manifest.json, Service.qml,  Omarchy plugin (id io.github.johwconst.predatorsense), at the repository root as the
+Panel.qml, Model.js, i18n/   marketplace requires; icon.svg is the bar icon (derived from icons/predatorsense-icon.svg)
+icons/                       predatorsense-icon.svg: full icon, used by the GTK tray
 system/                      udev rule, tmpfiles.d, modprobe.d, modules-load.d (installed by install.sh)
 install.sh                   installer/uninstaller (uses sudo for system/)
 PROTOCOLO.md                 ENE K5130 protocol and sysfs paths, with real readings (Portuguese)
@@ -46,7 +48,10 @@ This tool runs all day next to the user's work. Changes must not add background 
 
 ## Plugin rules (Omarchy / Quickshell)
 
-- Follow the Omarchy plugin contract: `manifest.json` (`schemaVersion: 1`), validate with `omarchy plugin validate omarchy/johwconst.predator`.
+- Marketplace layout (`omacom/omarchy-plugin-marketplace`, `SUBMISSION.md`): one plugin with `manifest.json` at the repository root, a root README with install and removal instructions, a root `LICENSE`, and documented external dependencies. The plugin ID `io.github.johwconst.predatorsense` is permanent once listed: do not change it.
+- No symlinks anywhere in the repository (`.git` excluded): the whole repository is the plugin folder and `omarchy plugin validate` rejects them.
+- The marketplace security baseline scans `install.sh` statically: never pipe downloads into a shell, never add `NOPASSWD` sudoers rules, keep runtime state under `$XDG_RUNTIME_DIR` (not `/tmp`).
+- Follow the Omarchy plugin contract: `manifest.json` (`schemaVersion: 1`), validate with `omarchy plugin validate .`.
 - Reuse the `qs.Ui` kit (`Panel`, `BarIconButton`, `KeyboardPanel`, `ButtonGroup`, `Dropdown`, `Toggle`, `PanelSlider`, `TextField`, `Button`). Read the built-in plugins in `/usr/share/omarchy/shell/plugins/` (e.g. `panels/power/Panel.qml`) for patterns. **Never edit `/usr/share/omarchy/`.**
 - Every `Text` showing dynamic data uses `textFormat: Text.PlainText` (the shell is unsandboxed).
 - Animations: `Style.duration(ms)`, ease-out, under 300 ms.
@@ -73,7 +78,7 @@ There is no automated test suite yet. Before committing:
 ```bash
 python3 -m py_compile predator/*.py
 bash -n install.sh
-omarchy plugin validate omarchy/johwconst.predator
+omarchy plugin validate .
 bin/predator state --json | jq .        # read-only, safe
 ```
 
@@ -83,7 +88,7 @@ bin/predator state --json | jq .        # read-only, safe
   ```
   and replace `hw.set_lighting` with a function that records calls (see how the Claude hook sequence was tested: running → running → waiting → new target → failure → retry → off).
 - Changing the performance mode, charge limit or LEDs changes the user's machine: ask first, and restore the previous value afterwards.
-- Plugin: files under `~/.config/omarchy/plugins/` hot-reload on save (`omarchy-shell shell rescanPlugins` forces it). Read errors with `quickshell log -p /usr/share/omarchy/shell`. Open the panel with `quickshell ipc -p /usr/share/omarchy/shell call johwconst.predator open`. If a layout change does not show up, `omarchy restart shell`.
+- Plugin: files under `~/.config/omarchy/plugins/` hot-reload on save (`omarchy-shell shell rescanPlugins` forces it). Read errors with `quickshell log -p /usr/share/omarchy/shell`. Open the panel with `quickshell ipc -p /usr/share/omarchy/shell call io.github.johwconst.predatorsense open`. If a layout change does not show up, `omarchy restart shell`.
 - Screenshots of the panel: capture only the bar/panel region (`grim -g`), never the whole screen.
 
 ## Commits

@@ -1,12 +1,16 @@
 {
   "schemaVersion": 1,
-  "id": "johwconst.predator",
-  "name": "Predator",
+  "id": "io.github.johwconst.predatorsense",
+  "name": "PredatorSense Lite",
   "version": "1.0.0",
   "author": "johwconst",
-  "description": "Lighting, performance modes and Claude Code LEDs for the Acer Predator PHN16S-71.",
   "license": "MIT",
-  "kinds": ["service", "bar-widget"],
+  "description": "Lighting, performance modes and Claude Code LEDs for the Acer Predator PHN16S-71.",
+  "repository": "https://github.com/johwconst/omarchy-predatorsense-lite",
+  "kinds": [
+    "service",
+    "bar-widget"
+  ],
   "keepLoaded": true,
   "entryPoints": {
     "service": "Service.qml",

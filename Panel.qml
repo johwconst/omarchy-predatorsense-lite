@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Effects
 import Quickshell
 import Quickshell.Io
 import qs.Commons
@@ -10,8 +11,8 @@ import "Model.js" as Model
 // (processos curtos); com o painel fechado não há nenhuma leitura de hardware.
 Panel {
   id: root
-  moduleName: "johwconst.predator"
-  ipcTarget: "johwconst.predator"
+  moduleName: "io.github.johwconst.predatorsense"
+  ipcTarget: "io.github.johwconst.predatorsense"
 
   readonly property string predator: Quickshell.env("HOME") + "/.local/bin/predator"
   readonly property color fg: root.bar ? root.bar.foreground : Commons.Color.foreground
@@ -211,8 +212,33 @@ Panel {
     id: button
     anchors.fill: parent
     bar: root.bar
-    text: "󰌌"
     tooltipText: ""
+    // Ícone monocromático pintado com a cor da barra (segue o tema do Omarchy).
+    iconComponent: Component {
+      Item {
+        Image {
+          id: iconShape
+          anchors.fill: parent
+          source: Qt.resolvedUrl("icon.svg")
+          fillMode: Image.PreserveAspectFit
+          sourceSize.width: Math.round(width * Screen.devicePixelRatio)
+          sourceSize.height: Math.round(height * Screen.devicePixelRatio)
+          visible: false
+          layer.enabled: true
+        }
+        Rectangle {
+          anchors.fill: iconShape
+          color: button.active && button.useActiveColor ? button.activeColor : button.foreground
+          layer.enabled: true
+          layer.effect: MultiEffect {
+            maskEnabled: true
+            maskSource: iconShape
+            maskThresholdMin: 0.5
+            maskSpreadAtMin: 1.0
+          }
+        }
+      }
+    }
     onPressed: function(b) { root.toggle() }
   }
 

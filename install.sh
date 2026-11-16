@@ -9,8 +9,18 @@ DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
 BIN="$HOME/.local/bin/predator"
 AUTOSTART="${XDG_CONFIG_HOME:-$HOME/.config}/autostart/predator-tray.desktop"
 CLAUDE_SETTINGS="$HOME/.claude/settings.json"
-PLUGIN_ID=johwconst.predator
-PLUGIN_LINK="${XDG_CONFIG_HOME:-$HOME/.config}/omarchy/plugins/$PLUGIN_ID"
+PLUGIN_ID=io.github.johwconst.predatorsense
+PLUGINS_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/omarchy/plugins"
+PLUGIN_LINK="$PLUGINS_DIR/$PLUGIN_ID"
+OLD_PLUGIN_ID=johwconst.predator   # ID antigo (plugin numa subpasta omarchy/): removido ao instalar ou desinstalar
+# Instalado com `omarchy plugin add`, o repositório já é a pasta do plugin: não há link a criar.
+[[ "$DIR" == "$(readlink -f "$PLUGIN_LINK" 2>/dev/null)" && ! -L "$PLUGIN_LINK" ]] && FROM_OMARCHY=1 || FROM_OMARCHY=0
+
+remove_old_plugin() {
+  [[ -L "$PLUGINS_DIR/$OLD_PLUGIN_ID" ]] || return 0
+  omarchy plugin disable "$OLD_PLUGIN_ID" >/dev/null 2>&1 || true
+  rm -f "$PLUGINS_DIR/$OLD_PLUGIN_ID"
+}
 UDEV=/etc/udev/rules.d/99-predator-rgb.rules
 TMPFILES=/etc/tmpfiles.d/predator-rgb.conf
 MODPROBE=/etc/modprobe.d/predator-rgb.conf
@@ -57,11 +67,15 @@ if [[ "${1:-}" == "--uninstall" ]]; then
     omarchy plugin disable "$PLUGIN_ID" >/dev/null 2>&1 || true
     rm -f "$PLUGIN_LINK"
   fi
+  remove_old_plugin
   rm -f "$BIN" "$AUTOSTART"
   remove_hooks
   sudo rm -f "$UDEV" "$TMPFILES" "$MODPROBE" "$MODULES"
   sudo udevadm control --reload
   echo "desinstalado. As permissões do sysfs voltam ao padrão no próximo boot."
+  if (( FROM_OMARCHY )); then
+    echo "para remover o plugin (esta pasta): omarchy plugin remove $PLUGIN_ID"
+  fi
   exit 0
 fi
 
@@ -104,8 +118,15 @@ sudo systemd-tmpfiles --create "$TMPFILES"
 
 # 4. interface: plugin nativo no Omarchy (roda dentro do omarchy-shell); fora dele, a bandeja GTK
 if command -v omarchy >/dev/null; then
-  mkdir -p "$(dirname "$PLUGIN_LINK")"
-  ln -sfn "$DIR/omarchy/$PLUGIN_ID" "$PLUGIN_LINK"
+  remove_old_plugin
+  if (( FROM_OMARCHY )); then
+    :   # `omarchy plugin add` já colocou o repositório na pasta de plugins
+  elif [[ -e "$PLUGIN_LINK" && ! -L "$PLUGIN_LINK" ]]; then
+    echo "aviso: $PLUGIN_LINK já existe (instalado com omarchy plugin add?); mantido sem alterar."
+  else
+    mkdir -p "$PLUGINS_DIR"
+    ln -sfn "$DIR" "$PLUGIN_LINK"
+  fi
   omarchy-shell shell rescanPlugins >/dev/null 2>&1 || true
   sleep 1
   omarchy plugin enable "$PLUGIN_ID" || echo "aviso: ative depois com: omarchy plugin enable $PLUGIN_ID"

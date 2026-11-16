@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="60 19 180 183" role="img" aria-label="Símbolo geométrico em um escudo">
+  <title>Símbolo PredatorSense</title>
+  <!-- Monocromático (uma cor, recortes vazados). A barra do Omarchy usa icon.svg (raiz), derivado deste. -->
+  <path d="M77 26 H223 Q233 26 233 37 V171 Q233 181 224 185 L190 195 H110 L76 185 Q67 181 67 171 V37 Q67 26 77 26 Z"
+        fill="none" stroke="#000" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/>
+  <g fill="#000">
+    <!-- Asa/lâmina esquerda, já sem o recorte interno -->
+    <path d="M126 181 L146 143 L146 60 L135 103 L110 77 L98 43 L98 132 L122 155 L122 136 L110 123 L110 106 L110 101 L110 88 L134 119 L134 143 L126 134.333 Z"/>
+    <!-- Asa/lâmina direita (espelho) -->
+    <path d="M174 181 L154 143 L154 60 L165 103 L190 77 L202 43 L202 132 L178 155 L178 136 L190 123 L190 106 L190 101 L190 88 L166 119 L166 143 L174 134.333 Z"/>
+  </g>
+</svg>
