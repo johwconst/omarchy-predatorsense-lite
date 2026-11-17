@@ -4,7 +4,7 @@ import Quickshell.Io
 import Quickshell.Services.UPower
 
 // Serviço de fundo do Predator dentro do omarchy-shell (substitui a bandeja GTK no Omarchy):
-// reaplica o padrão salvo ao iniciar e ao acordar, e o modo de cada fonte ao ligar/tirar o carregador.
+// reaplica o padrão salvo ao iniciar e ao acordar (se a opção estiver ligada: `restore --auto`), e o modo de cada fonte ao ligar/tirar o carregador.
 // Não faz polling: tudo vem de eventos (UPower e o sinal PrepareForSleep do logind).
 Item {
   id: root
@@ -35,7 +35,7 @@ Item {
 
   Process {
     id: restoreProc
-    command: [root.predator, "restore"]
+    command: [root.predator, "restore", "--auto"]
     stderr: StdioCollector { waitForEnd: true; onStreamFinished: root.restoreError = text.trim() }
     onExited: function(exitCode) {
       if (exitCode === 0) return

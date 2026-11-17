@@ -87,13 +87,13 @@ omarchy plugin remove io.github.johwconst.predatorsense    # only if installed w
 The plugin (repository root: `manifest.json`, `Service.qml`, `Panel.qml`, `Model.js`, `i18n/`) is a `service` + `bar-widget`:
 
 - **Bar icon** (right section) opening a panel with three tabs:
-  - **General**: monitor, performance mode, mode when plugged in / on battery, charge limit, keyboard timeout, CPU/GPU temperature in the bar;
+  - **General**: monitor, performance mode, mode when plugged in / on battery, charge limit, keyboard timeout, apply saved settings at startup, CPU/GPU temperature in the bar;
   - **Lighting**: target, effect, color, brightness, speed, direction and zones, with live preview and **Save as default**;
   - **Claude Code**: which LEDs show Claude's state, and effect, color, speed and sound per state.
 - The panel reads the hardware (`predator state --json`) **only while it is open**, every 3 s. When closed it reads nothing and never wakes the GPU.
 - **Total power draw** in the panel (and in the bar, below). Only measurable on battery (battery current × voltage); on AC the charger reports nothing, so it shows "–".
 - Optional: **temperatures and power draw in the bar** in place of the icon (`C 62° G 51° 18W`, alert color at 90 °C). It reads three sysfs files every 3 s without spawning processes; the GPU value comes from the EC sensor, so it never wakes the GPU.
-- **Background service**: reapplies the saved defaults when the shell starts and on resume (logind `PrepareForSleep`, via `gdbus monitor`), and applies the per-source mode when the charger is plugged or unplugged (UPower). Errors become notifications.
+- **Background service**: reapplies the saved defaults when the shell starts and on resume (unless **Apply saved settings at startup** is off) (logind `PrepareForSleep`, via `gdbus monitor`), and applies the per-source mode when the charger is plugged or unplugged (UPower). Errors become notifications.
 - Strings follow Omarchy's language (`i18n/en.json`, `i18n/pt-BR.json`).
 
 ```bash
@@ -115,6 +115,7 @@ predator light logo --color 0000FF --brightness 30 --save   # save as default
 predator light button --effect breath
 predator off                     # turn all three off
 predator restore                 # reapply charge limit, per-source mode and saved lighting
+predator restore-on-start on|off # do it automatically at login and on resume (default on)
 
 predator mode                    # show the mode
 predator mode turbo              # silent | balanced | performance | turbo | eco

@@ -141,7 +141,16 @@ def restore_saved() -> None:
 
 
 def cmd_restore(a):
+    # --auto: chamado pelo plugin/bandeja ao iniciar e ao acordar; respeita a opção "aplicar ao iniciar".
+    if a.auto and not Settings.load().RestoreOnStart:
+        return
     restore_saved()
+
+
+def cmd_restore_on_start(a):
+    if a.value is not None:
+        Settings.save_restore_on_start(ON_OFF[a.value])
+    print(f"aplicar padrão ao iniciar e ao acordar: {_yes_no(Settings.load().RestoreOnStart)}")
 
 
 def cmd_mode(a):
@@ -214,6 +223,7 @@ def cmd_state(a):
         "modes": [_arg_name(MODE_ARGS, m) for m, _ in hw.MODES if m in hw.supported_modes()],
         "autoMode": {"ac": _arg_name(MODE_ARGS, s.ModeOnAC), "battery": _arg_name(MODE_ARGS, s.ModeOnBattery)},
         "chargeLimit": s.ChargeLimit,
+        "restoreOnStart": s.RestoreOnStart,
         "effects": {name: [_arg_name(EFFECT_ARGS, e) for e, _ in hw.EFFECTS
                            if t == LightTarget.Keyboard or e in hw.LOGO_EFFECTS] for name, t in targets},
         "lighting": {name: (_light_json(l) if (l := s.saved_lighting(t)) else None) for name, t in targets},
@@ -301,7 +311,13 @@ def main(argv=None):
     s.set_defaults(func=cmd_light)
 
     sub.add_parser("off", help="apaga teclado, logo e botão").set_defaults(func=cmd_off)
-    sub.add_parser("restore", help="reaplica o modo da fonte atual e o padrão salvo").set_defaults(func=cmd_restore)
+    s = sub.add_parser("restore", help="reaplica o modo da fonte atual e o padrão salvo")
+    s.add_argument("--auto", action="store_true", help="só se a opção restore-on-start estiver ligada")
+    s.set_defaults(func=cmd_restore)
+
+    s = sub.add_parser("restore-on-start", help="reaplicar o padrão salvo ao iniciar a sessão e ao acordar")
+    s.add_argument("value", nargs="?", choices=ON_OFF)
+    s.set_defaults(func=cmd_restore_on_start)
 
     s = sub.add_parser("mode", help="mostra ou troca o modo de desempenho")
     s.add_argument("mode", nargs="?", choices=MODE_ARGS)

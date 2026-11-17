@@ -455,6 +455,15 @@ Panel {
           }
           Toggle {
             width: parent.width
+            label: root.t("restoreOnStart")
+            description: root.t("restoreOnStartHint")
+            checked: root.info !== null && root.info.restoreOnStart !== false
+            foreground: root.fg
+            fontFamily: root.fontFamily
+            onClicked: root.action(["restore-on-start", checked ? "off" : "on"])
+          }
+          Toggle {
+            width: parent.width
             visible: root.cpuTempPath !== "" || root.gpuTempPath !== "" || root.batteryPath !== ""
             label: root.t("barTemps")
             description: root.t("barTempsHint")

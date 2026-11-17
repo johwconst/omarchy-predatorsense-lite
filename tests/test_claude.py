@@ -104,6 +104,22 @@ class SettingsTest(Fixture):
         self.assertTrue(loaded.BarTemps)
         self.assertEqual(loaded.ClaudeSounds, {"done": ""})
 
+    def test_restore_auto_respects_option(self):
+        from types import SimpleNamespace
+        from predator import cli
+        calls = []
+        orig = cli.restore_saved
+        cli.restore_saved = lambda: calls.append("restore")
+        try:
+            self.assertTrue(Settings.load().RestoreOnStart)  # padrão: ligado
+            cli.cmd_restore(SimpleNamespace(auto=True))
+            Settings.save_restore_on_start(False)
+            cli.cmd_restore(SimpleNamespace(auto=True))   # login/acordar: pula
+            cli.cmd_restore(SimpleNamespace(auto=False))  # botão "Restaurar": sempre roda
+        finally:
+            cli.restore_saved = orig
+        self.assertEqual(calls, ["restore", "restore"])
+
     def test_invalid_file_is_not_overwritten(self):
         os.makedirs(settings.FOLDER, exist_ok=True)
         bad = '{"Lighting": [{"Target": "Keyboard", "Effect": "Rainbow", "R": 1, "G": 2, "B": 3}]}'

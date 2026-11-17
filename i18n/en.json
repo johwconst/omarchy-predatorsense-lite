@@ -21,6 +21,8 @@
   "keyboardTimeout": "Turn keyboard off after 30 s idle",
   "chargeLimit": "Limit charge to 80%",
   "chargeLimitHint": "Battery health mode",
+  "restoreOnStart": "Apply saved settings at startup",
+  "restoreOnStartHint": "Lighting, per-source mode and charge limit at login and on resume",
   "barTemps": "Show temperatures and power draw in the bar",
   "barTempsHint": "Replaces the icon; power only on battery; alert color at 90 °C or above",
   "mode.eco": "Eco",

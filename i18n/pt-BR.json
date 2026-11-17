@@ -21,6 +21,8 @@
   "keyboardTimeout": "Apagar teclado após 30 s sem uso",
   "chargeLimit": "Limitar carga em 80%",
   "chargeLimitHint": "Modo de saúde da bateria",
+  "restoreOnStart": "Aplicar padrão ao iniciar",
+  "restoreOnStartHint": "Iluminação, modo por fonte e limite de carga no login e ao acordar",
   "barTemps": "Mostrar temperaturas e consumo na barra",
   "barTempsHint": "Substitui o ícone; consumo só na bateria; cor de alerta a partir de 90 °C",
   "mode.eco": "Eco",

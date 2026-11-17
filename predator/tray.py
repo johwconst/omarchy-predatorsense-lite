@@ -88,6 +88,8 @@ class Tray:
 
     def restore_once(self, attempt=1):
         # Logo após o login ou a suspensão o HID e o firmware podem ainda não responder: tenta 3 vezes.
+        if not Settings.load().RestoreOnStart:
+            return False
         try:
             restore_saved()
         except Exception as e:
@@ -162,6 +164,7 @@ class Tray:
         self.check(menu, "Limitar carga em 80%", hw.get_charge_limit(),
                    lambda on: run_safely(lambda: set_charge_limit(on)))
         self.check(menu, "Iniciar com a sessão", os.path.exists(AUTOSTART), set_autostart)
+        self.check(menu, "Aplicar padrão ao iniciar", Settings.load().RestoreOnStart, Settings.save_restore_on_start)
         menu.append(Gtk.SeparatorMenuItem())
         self.item(menu, "Sair", Gtk.main_quit)
         menu.show_all()
