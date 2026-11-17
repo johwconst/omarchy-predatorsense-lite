@@ -34,6 +34,7 @@ def print_status(s: hw.Status) -> None:
           f"   {_fmt(s.gpu_power_w, ' W')}, uso {_fmt(s.gpu_util, '%')}")
     print(f"Bateria            : {_fmt(s.battery_percent, '%')} ({s.battery_status or '–'}), "
           f"{hw.source_text(s.on_ac)}")
+    print(f"Consumo total      : {_fmt(s.system_power_w, ' W') if s.system_power_w is not None else '– (só na bateria)'}")
     print(f"Limite de carga 80%: {_yes_no(s.charge_limited)}")
     print(f"Apagar teclado 30 s: {_yes_no(s.keyboard_timeout)}")
 
@@ -178,12 +179,14 @@ def cmd_charge_limit(a):
 
 
 def cmd_bar_temps(a):
-    """Liga/desliga as temperaturas na barra; sem argumento, imprime o JSON lido pelo plugin uma vez ao carregar."""
+    """Liga/desliga temperaturas e consumo na barra; sem argumento, imprime o JSON lido pelo plugin uma vez ao carregar."""
     import json
     if a.value is not None:
         Settings.save_bar_temps(ON_OFF[a.value])
         return
-    print(json.dumps({"enabled": Settings.load().BarTemps, "cpu": hw.cpu_temp_path(), "gpu": hw.gpu_temp_path()}))
+    battery = f"{hw.BATTERY}/uevent"
+    print(json.dumps({"enabled": Settings.load().BarTemps, "cpu": hw.cpu_temp_path(), "gpu": hw.gpu_temp_path(),
+                      "battery": battery if os.path.exists(battery) else None}))
 
 
 def _arg_name(table: dict, value):
@@ -318,7 +321,7 @@ def main(argv=None):
     s.add_argument("value", nargs="?", choices=ON_OFF)
     s.set_defaults(func=cmd_charge_limit)
 
-    s = sub.add_parser("bar-temps", help="temperaturas de CPU/GPU na barra do Omarchy no lugar do ícone")
+    s = sub.add_parser("bar-temps", help="temperaturas de CPU/GPU e consumo na barra do Omarchy no lugar do ícone")
     s.add_argument("value", nargs="?", choices=ON_OFF)
     s.set_defaults(func=cmd_bar_temps)
 

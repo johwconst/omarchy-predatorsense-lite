@@ -122,11 +122,27 @@ function parseMilli(text) {
   return isNaN(v) ? null : Math.round(v / 1000)
 }
 
-// "C 62° G 51°"; omite o lado sem leitura; nenhum -> "".
-function barTempsText(cpu, gpu) {
+// Consumo total em W pelo uevent da bateria; só descarregando (na tomada o ACAD não informa).
+// Mesma regra de hw.parse_battery_power.
+function parseBatteryPower(text) {
+  var d = {}
+  String(text || "").split("\n").forEach(function(line) {
+    var i = line.indexOf("=")
+    if (i > 0) d[line.slice(0, i)] = line.slice(i + 1).trim()
+  })
+  if (d.POWER_SUPPLY_STATUS !== "Discharging") return null
+  var uw = "POWER_SUPPLY_POWER_NOW" in d
+    ? Math.abs(parseInt(d.POWER_SUPPLY_POWER_NOW, 10))
+    : Math.abs(parseInt(d.POWER_SUPPLY_CURRENT_NOW, 10)) * parseInt(d.POWER_SUPPLY_VOLTAGE_NOW, 10) / 1e6
+  return isNaN(uw) || uw === 0 ? null : Math.round(uw / 1e5) / 10
+}
+
+// "C 62° G 51° 18W"; omite o que não tiver leitura; nada -> "".
+function barTempsText(cpu, gpu, power) {
   var parts = []
   if (cpu !== null && cpu !== undefined) parts.push("C " + cpu + "°")
   if (gpu !== null && gpu !== undefined) parts.push("G " + gpu + "°")
+  if (power !== null && power !== undefined) parts.push(Math.round(power) + "W")
   return parts.join(" ")
 }
 

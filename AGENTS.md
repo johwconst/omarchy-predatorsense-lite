@@ -43,7 +43,8 @@ This tool runs all day next to the user's work. Changes must not add background 
 
 - No polling where an event exists: UPower `OnBattery`, logind `PrepareForSleep`, `platform_profile` notify.
 - The plugin panel reads `predator state --json` only while open. Do not add timers that run while it is closed.
-- Single exception, opt-in: with "temperatures in the bar" on (`predator bar-temps on`), the widget re-reads two sysfs files (coretemp `Package id 0` and the EC GPU sensor, hwmon `acer` `temp2_input`) through `FileView` every 3 s. The paths come from `predator bar-temps` once at load. No process spawn and never `nvidia-smi` there; with the option off no timer runs.
+- Single exception, opt-in: with "temperatures in the bar" on (`predator bar-temps on`), the widget re-reads three sysfs files (coretemp `Package id 0`, the EC GPU sensor hwmon `acer` `temp2_input`, and `BAT1/uevent` for the power draw) through `FileView` every 3 s. The paths come from `predator bar-temps` once at load. No process spawn and never `nvidia-smi` there; with the option off no timer runs.
+- Total power draw is only measurable on battery (`BAT1` current × voltage while `Discharging`): on AC the `ACAD` supply reports nothing and RAPL `energy_uj` is root-only (CVE-2020-8694), so show "–" there; do not loosen RAPL permissions. The rule lives in `hw.parse_battery_power` and `Model.parseBatteryPower`: change both.
 - `nvidia-smi` wakes a suspended GPU: always guard it with `_nvidia_suspended()`.
 - Do not spawn helper processes for things readable directly (the power profile is read over D-Bus, not `powerprofilesctl`).
 - The Claude hook runs after **every** tool call: keep `predator claude <state>` on the argparse-free fast path in `cli.main`, and keep the "unchanged state = no HID write" short-circuit (with its `retry` flag after failures).

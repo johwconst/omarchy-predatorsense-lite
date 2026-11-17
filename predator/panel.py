@@ -170,7 +170,8 @@ class Panel(Adw.ApplicationWindow):
             return "–" if x is None else f"{x}{unit}"
         self.mon["cpu"].set_text(f"{v(s.cpu_temp, ' °C')} · {v(s.cpu_fan_rpm, ' RPM')}")
         self.mon["gpu"].set_text(f"{v(s.gpu_temp, ' °C')} · {v(s.gpu_fan_rpm, ' RPM')} · {v(s.gpu_power_w, ' W')}")
-        self.mon["bat"].set_text(f"{v(s.battery_percent, '%')} · {hw.source_text(s.on_ac)}")
+        self.mon["bat"].set_text(f"{v(s.battery_percent, '%')} · {hw.source_text(s.on_ac)}"
+                                 + (f" · {s.system_power_w} W" if s.system_power_w is not None else ""))
         mode = hw.PerformanceMode[s.mode] if s.mode else None
         self.mon["mode"].set_text(hw.mode_text(mode) + (f" · {s.power_profile}" if s.power_profile else ""))
         self.loading = True

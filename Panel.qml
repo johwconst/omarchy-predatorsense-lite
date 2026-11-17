@@ -47,9 +47,12 @@ Panel {
   property bool barTemps: false
   property string cpuTempPath: ""
   property string gpuTempPath: ""
+  property string batteryPath: ""
   property var cpuTemp: null
   property var gpuTemp: null
-  readonly property bool showTemps: barTemps && !button.vertical && Model.barTempsText(cpuTemp, gpuTemp) !== ""
+  property var powerW: null
+  readonly property string barText: Model.barTempsText(cpuTemp, gpuTemp, powerW)
+  readonly property bool showTemps: barTemps && !button.vertical && barText !== ""
   readonly property Item barButton: showTemps ? tempsButton : button
 
   implicitWidth: barButton.implicitWidth
@@ -104,6 +107,7 @@ Panel {
         if (d === null) return
         root.cpuTempPath = d.cpu || ""
         root.gpuTempPath = d.gpu || ""
+        root.batteryPath = d.battery || ""
         root.barTemps = d.enabled === true
         if (root.barTemps) root.readTemps()
       }
@@ -113,6 +117,7 @@ Panel {
   function readTemps() {
     if (cpuTempPath !== "") cpuFile.reload()
     if (gpuTempPath !== "") gpuFile.reload()
+    if (batteryPath !== "") batteryFile.reload()
   }
 
   function setBarTemps(enabled) {
@@ -137,6 +142,15 @@ Panel {
     printErrors: false
     onLoaded: root.gpuTemp = Model.parseMilli(text())
     onLoadFailed: root.gpuTemp = null
+  }
+
+  FileView {
+    id: batteryFile
+    path: root.batteryPath
+    watchChanges: false
+    printErrors: false
+    onLoaded: root.powerW = Model.parseBatteryPower(text())
+    onLoadFailed: root.powerW = null
   }
 
   Timer { interval: 3000; running: root.barTemps && !button.vertical; repeat: true; onTriggered: root.readTemps() }
@@ -310,7 +324,7 @@ Panel {
     anchors.fill: parent
     bar: root.bar
     visible: root.showTemps
-    text: Model.barTempsText(root.cpuTemp, root.gpuTemp)
+    text: root.barText
     fontSize: Style.font.bodySmall
     // Cor de alerta da barra (tema) a partir de TEMP_ALERT.
     active: Model.tempsHot(root.cpuTemp, root.gpuTemp)
@@ -377,6 +391,11 @@ Panel {
             value: Model.reading(root.status.battery_percent, "%") + " · " + root.sourceText()
           }
           InfoPair {
+            label: root.t("power")
+            value: root.status.system_power_w !== null && root.status.system_power_w !== undefined
+                   ? Model.reading(root.status.system_power_w, " W") : root.t("powerBatteryOnly")
+          }
+          InfoPair {
             label: root.t("mode")
             value: (root.status.mode ? root.t("mode." + root.status.mode) : "–")
                    + (root.status.power_profile ? " · " + root.status.power_profile : "")
@@ -436,7 +455,7 @@ Panel {
           }
           Toggle {
             width: parent.width
-            visible: root.cpuTempPath !== "" || root.gpuTempPath !== ""
+            visible: root.cpuTempPath !== "" || root.gpuTempPath !== "" || root.batteryPath !== ""
             label: root.t("barTemps")
             description: root.t("barTempsHint")
             checked: root.barTemps

@@ -369,6 +369,7 @@ class Status:
     power_profile: str = None
     gpu_power_w: float = None
     gpu_util: int = None
+    system_power_w: float = None
 
     def to_json(self) -> str:
         return json.dumps(asdict(self), ensure_ascii=False, indent=2)
@@ -418,6 +419,33 @@ def _gpu():
         return None, None, None
 
 
+BATTERY = "/sys/class/power_supply/BAT1"
+
+
+def parse_battery_power(uevent: str):
+    """Consumo total em W a partir do uevent da bateria; só existe descarregando.
+
+    Na tomada o ACAD não informa potência e a corrente da bateria é a de carga, não o consumo: None.
+    Mesma regra em Model.js (parseBatteryPower), que lê o mesmo arquivo para a barra.
+    """
+    d = dict(line.split("=", 1) for line in uevent.splitlines() if "=" in line)
+    if d.get("POWER_SUPPLY_STATUS") != "Discharging":
+        return None
+    try:
+        if "POWER_SUPPLY_POWER_NOW" in d:
+            microwatts = abs(int(d["POWER_SUPPLY_POWER_NOW"]))
+        else:
+            microwatts = abs(int(d["POWER_SUPPLY_CURRENT_NOW"])) * int(d["POWER_SUPPLY_VOLTAGE_NOW"]) / 1e6
+    except (KeyError, ValueError):
+        return None
+    return round(microwatts / 1e6, 1) if microwatts else None
+
+
+def system_power_w():
+    text = _read(f"{BATTERY}/uevent")
+    return parse_battery_power(text) if text else None
+
+
 def fan_rpms():
     fans = _hwmon("acer")
     if not fans:
@@ -443,12 +471,13 @@ def read_status() -> Status:
         cpu_fan_rpm=cpu_fan,
         gpu_fan_rpm=gpu_fan,
         mode=mode.name if mode is not None else None,
-        battery_percent=_read_int("/sys/class/power_supply/BAT1/capacity"),
-        battery_status=_read("/sys/class/power_supply/BAT1/status"),
+        battery_percent=_read_int(f"{BATTERY}/capacity"),
+        battery_status=_read(f"{BATTERY}/status"),
         on_ac=on_ac(),
         charge_limited=get_charge_limit(),
         keyboard_timeout=get_keyboard_timeout(),
         power_profile=get_power_profile(),
         gpu_power_w=gpu_power,
         gpu_util=gpu_util,
+        system_power_w=system_power_w(),
     )
